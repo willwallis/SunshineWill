@@ -32,18 +32,12 @@ public class MainActivityFragment extends Fragment {
         forecastList.add("Thurs - Rainy - 64/51");
         forecastList.add("Fri - Foggy - 70/46");
         forecastList.add("Sat - Sunny - 76/68");
-
-        //Alternate Array setup
-        String[] forecastArray = {
-                "Today - Sunny - 88/63",
-                "Tomorrow - Foggy - 70/46",
-                "Weds - Cloudy - 72/63",
-                "Thurs - Rainy - 64/51",
-                "Fri - Foggy - 70/46",
-                "Sat - Sunny - 76/68"
-        };
-
-        List<String> weekForecast=new ArrayList<String>(Arrays.asList(forecastArray));
+        forecastList.add("Today - Sunny - 68/54");
+        forecastList.add("Tomorrow - Foggy - 75/54");
+        forecastList.add("Weds - Cloudy - 74/68");
+        forecastList.add("Thurs - Rainy - 66/61");
+        forecastList.add("Fri - Foggy - 60/47");
+        forecastList.add("Sat - Sunny - 76/65");
 
         // Setup adapter
         ArrayAdapter<String> ForecastAdapter = new ArrayAdapter<String> (
@@ -54,10 +48,10 @@ public class MainActivityFragment extends Fragment {
             // ID of the text view to populate
             R.id.list_item_forecast_textview,
             //Forecast Data
-            weekForecast
+            forecastList
         ) ;
 
-        // OOB Stuff
+        // OOB Inflate View
         View mainFragmentView = inflater.inflate(R.layout.fragment_main, container, false);
 
         // Bind view to adapter
