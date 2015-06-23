@@ -37,6 +37,9 @@ import java.util.List;
  */
 public class ForecastFragment extends Fragment {
 
+    // Added forecast adapter as a global variable so can modify in other thread
+    private ArrayAdapter<String> ForecastAdapter;
+
     public ForecastFragment() {
     }
 
@@ -62,7 +65,7 @@ public class ForecastFragment extends Fragment {
         forecastList.add("Sat - Sunny - 76/65");
 
         // Setup adapter
-        ArrayAdapter<String> ForecastAdapter = new ArrayAdapter<String> (
+        ForecastAdapter = new ArrayAdapter<String> (
             // Context
             getActivity(),
             // ID of list item layout
@@ -91,14 +94,12 @@ public class ForecastFragment extends Fragment {
         inflater.inflate(R.menu.forecastfragment, menu);
     }
 
-    // Handler for refresh selected
+    // Handler for refresh menu item being clicked.
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
         // Handle item selection
         switch (item.getItemId()) {
             case R.id.action_refresh:
-//                Toast toast = Toast.makeText(getActivity() , "Ahhh... Refreshing", Toast.LENGTH_SHORT);
-//                toast.show();
                 FetchWeatherTask weatherTask = new FetchWeatherTask();
                 weatherTask.execute("94043");
                 return true;
@@ -108,12 +109,26 @@ public class ForecastFragment extends Fragment {
     }
 
 
-public class FetchWeatherTask extends AsyncTask<String, Void, Void> {
+    // Class to fetch weather forecast from OpenWeatherMap API
+
+public class FetchWeatherTask extends AsyncTask<String, Void, String[]> {
 
         private final String LOG_TAG = FetchWeatherTask.class.getSimpleName();
 
-        @Override
-        protected Void doInBackground(String... params) {
+    @Override
+    protected void onPostExecute(String[] results) {
+        if (results != null)
+        {
+            ForecastAdapter.clear();
+            for(String dayForeCast : results) {
+                ForecastAdapter.add(dayForeCast);
+            }
+        }
+    }
+
+
+    @Override
+        protected String[] doInBackground(String... params) {
             //-------------------------------------------------------------------------------------
             // GitHub Snippet HTML Load Code
             // These two need to be declared outside the try/catch
@@ -130,8 +145,9 @@ public class FetchWeatherTask extends AsyncTask<String, Void, Void> {
             int numDays = 7;
 
             try {
-                // Building URL for OpenWeatherMap SPI
-
+                // Construct the URL for the OpenWeatherMap query
+                // Possible parameters are avaiable at OWM's forecast API page, at
+                // http://openweathermap.org/API#forecast
                 final String FORECAST_BASE_URL = "http://api.openweathermap.org/data/2.5/forecast/daily?";
                 final String QUERY_PARAM = "q";
                 final String FORMAT_PARAM = "mode";
@@ -145,15 +161,9 @@ public class FetchWeatherTask extends AsyncTask<String, Void, Void> {
                         .appendQueryParameter(DAYS_PARAM , Integer.toString(numDays))
                         .build();
 
-                URL url2 = new URL(builtUri.toString());
+                URL url = new URL(builtUri.toString());
 
-                Log.v(LOG_TAG, "Built URI " + url2);
-
-
-                // Construct the URL for the OpenWeatherMap query
-                // Possible parameters are avaiable at OWM's forecast API page, at
-                // http://openweathermap.org/API#forecast
-                URL url = new URL("http://api.openweathermap.org/data/2.5/forecast/daily?q=" + params[0] + "&mode=json&units=metric&cnt=7");
+            //    Log.v(LOG_TAG, "Built URI " + url);
 
                 // Create the request to OpenWeatherMap, and open the connection
                 urlConnection = (HttpURLConnection) url.openConnection();
@@ -182,8 +192,15 @@ public class FetchWeatherTask extends AsyncTask<String, Void, Void> {
                     return null;
                 }
                 forecastJsonStr = buffer.toString();
-
-                Log.v(LOG_TAG, "Forcast JSON String: " + forecastJsonStr);
+            try {
+                String[] dayForecast = getWeatherDataFromJson(forecastJsonStr, numDays);
+//                Log.v(LOG_TAG, "Forecast String Array: " + dayForecast.toString());
+                return dayForecast;
+            }catch (JSONException e) {
+                Log.e(LOG_TAG, "Error JSON ", e);
+                // Handles error returned by JSON parser.
+                return null;
+            }
 
             } catch (IOException e) {
                 Log.e(LOG_TAG, "Error ", e);
@@ -202,7 +219,6 @@ public class FetchWeatherTask extends AsyncTask<String, Void, Void> {
                     }
                 }
             }
-            return null;
             //----------------------------------------------------------------------------
         }
 
@@ -299,7 +315,7 @@ public class FetchWeatherTask extends AsyncTask<String, Void, Void> {
         }
 
         for (String s : resultStrs) {
-            Log.v(LOG_TAG, "Forecast entry: " + s);
+        //    Log.v(LOG_TAG, "Forecast entry: " + s);
         }
         return resultStrs;
 
