@@ -2,7 +2,7 @@
 Android application to display weather forecasts.
 
 ## Motivation
-Completed as part of Google's Android training course.
+Completed as part of Google's Developing Android Apps: Fundamentals training course.
 
 ## Contributors
 
