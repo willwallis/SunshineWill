@@ -1,7 +1,11 @@
 package com.knewto.www.sunshinewill.app;
 
+import android.content.Context;
+import android.content.Intent;
+import android.content.SharedPreferences;
 import android.net.Uri;
 import android.os.AsyncTask;
+import android.preference.PreferenceManager;
 import android.support.v4.app.Fragment;
 import android.os.Bundle;
 import android.text.format.Time;
@@ -12,6 +16,7 @@ import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.ListView;
 import android.widget.Toast;
@@ -51,7 +56,7 @@ public class ForecastFragment extends Fragment {
 
         // Creating an array list and add forecast values
         ArrayList<String> forecastList = new ArrayList<String>();
-        forecastList.add("Today - Sunny - 88/63");
+  /*      forecastList.add("Today - Sunny - 88/63");
         forecastList.add("Tomorrow - Foggy - 70/46");
         forecastList.add("Weds - Cloudy - 72/63");
         forecastList.add("Thurs - Rainy - 64/51");
@@ -62,7 +67,7 @@ public class ForecastFragment extends Fragment {
         forecastList.add("Weds - Cloudy - 74/68");
         forecastList.add("Thurs - Rainy - 66/61");
         forecastList.add("Fri - Foggy - 60/47");
-        forecastList.add("Sat - Sunny - 76/65");
+        forecastList.add("Sat - Sunny - 76/65");*/
 
         // Setup adapter
         ForecastAdapter = new ArrayAdapter<String> (
@@ -83,6 +88,18 @@ public class ForecastFragment extends Fragment {
         ListView listview = (ListView) mainFragmentView.findViewById(R.id.listview_forecast);
         listview.setAdapter(ForecastAdapter);
 
+        // Set up button listener
+        listview.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+            @Override
+            public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
+                String itemText = ForecastAdapter.getItem(position);
+
+                Intent detailIntent = new Intent(getActivity(), DetailActivity.class);
+                detailIntent.putExtra(Intent.EXTRA_TEXT, itemText);
+                getActivity().startActivity(detailIntent);
+            }
+        });
+
         return mainFragmentView;
     }
 
@@ -100,18 +117,33 @@ public class ForecastFragment extends Fragment {
         // Handle item selection
         switch (item.getItemId()) {
             case R.id.action_refresh:
-                FetchWeatherTask weatherTask = new FetchWeatherTask();
-                weatherTask.execute("94043");
+                updateWeather();
                 return true;
             default:
                 return super.onOptionsItemSelected(item);
         }
     }
 
+    // onstart method
+    @Override
+    public void onStart() {
+        super.onStart();
+        updateWeather();
+    }
+
+// method to update weather from server
+    private void updateWeather() {
+        FetchWeatherTask weatherTask = new FetchWeatherTask();
+        SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(getActivity());
+        String location = prefs.getString(getString(R.string.pref_location_key), getString(R.string.pref_location_default));
+        String units = prefs.getString(getString(R.string.pref_units_key), getString(R.string.pref_units_default));
+        weatherTask.execute(location, units);
+    }
+
 
     // Class to fetch weather forecast from OpenWeatherMap API
 
-public class FetchWeatherTask extends AsyncTask<String, Void, String[]> {
+public class FetchWeatherTask extends AsyncTask<String, String, String[]> {
 
         private final String LOG_TAG = FetchWeatherTask.class.getSimpleName();
 
@@ -157,13 +189,13 @@ public class FetchWeatherTask extends AsyncTask<String, Void, String[]> {
                 Uri builtUri = Uri.parse(FORECAST_BASE_URL).buildUpon()
                         .appendQueryParameter(QUERY_PARAM, params[0])
                         .appendQueryParameter(FORMAT_PARAM, format)
-                        .appendQueryParameter(UNIT_PARAM , units)
+                        .appendQueryParameter(UNIT_PARAM , params[1])
                         .appendQueryParameter(DAYS_PARAM , Integer.toString(numDays))
                         .build();
 
                 URL url = new URL(builtUri.toString());
 
-            //    Log.v(LOG_TAG, "Built URI " + url);
+                Log.v(LOG_TAG, "Built URI " + url);
 
                 // Create the request to OpenWeatherMap, and open the connection
                 urlConnection = (HttpURLConnection) url.openConnection();
